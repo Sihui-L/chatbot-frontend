@@ -7,6 +7,14 @@ export type Message = {
   timestamp: Date;
 };
 
+export type ChatSession = {
+  id: string;
+  name: string;
+  messages: Message[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 interface MessageBubbleProps {
   message: Message;
 }
