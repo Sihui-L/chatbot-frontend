@@ -1,5 +1,5 @@
 import React from "react";
-import { ChatSession } from "../components/MessageBubble"; // Update path if needed
+import { ChatSession } from "./MessageBubble"; // Now imports from updated MessageBubble
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
@@ -7,7 +7,7 @@ interface ChatSidebarProps {
   onSelectSession: (sessionId: string) => void;
   onCreateSession: () => void;
   onDeleteSession: (sessionId: string) => void;
-  connectionStatus: string;
+  connectionStatus: "connecting" | "connected" | "disconnected" | "error";
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({
@@ -28,6 +28,15 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     }).format(date);
   };
 
+  // Function to get chat preview text
+  const getChatPreview = (session: ChatSession): string => {
+    const lastMessage = session.messages[session.messages.length - 1];
+    if (!lastMessage) return "New conversation";
+    return lastMessage.content.length > 30
+      ? `${lastMessage.content.substring(0, 30)}...`
+      : lastMessage.content;
+  };
+
   return (
     <div className="w-64 h-full flex flex-col bg-gray-800 text-white">
       {/* Header */}
@@ -40,9 +49,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 ? "bg-green-500"
                 : connectionStatus === "connecting"
                 ? "bg-yellow-500"
-                : connectionStatus === "error"
-                ? "bg-red-500"
-                : "bg-gray-500"
+                : connectionStatus === "disconnected"
+                ? "bg-gray-500"
+                : "bg-red-500"
             }`}
           ></div>
           <span className="text-xs text-gray-300 capitalize">
@@ -62,32 +71,38 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             {sessions.map((session) => (
               <li key={session.id}>
                 <div
-                  className={`flex items-center justify-between p-2 rounded cursor-pointer ${
+                  className={`flex flex-col p-2 rounded cursor-pointer ${
                     activeSessionId === session.id
                       ? "bg-gray-700"
                       : "hover:bg-gray-700"
                   }`}
                   onClick={() => onSelectSession(session.id)}
                 >
-                  <div className="flex-grow overflow-hidden">
-                    <div className="font-medium truncate">{session.name}</div>
-                    <div className="text-xs text-gray-400 truncate">
-                      {formatDate(session.updatedAt)}
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium truncate max-w-[80%]">
+                      {session.name}
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          confirm("Are you sure you want to delete this chat?")
+                        ) {
+                          onDeleteSession(session.id);
+                        }
+                      }}
+                      className="text-gray-400 hover:text-red-400 ml-2"
+                      title="Delete session"
+                    >
+                      ×
+                    </button>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (
-                        confirm("Are you sure you want to delete this chat?")
-                      ) {
-                        onDeleteSession(session.id);
-                      }
-                    }}
-                    className="text-gray-400 hover:text-red-400 ml-2"
-                  >
-                    ×
-                  </button>
+                  <div className="text-xs text-gray-400 truncate mt-1">
+                    {getChatPreview(session)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {formatDate(session.updatedAt)}
+                  </div>
                 </div>
               </li>
             ))}
@@ -101,7 +116,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           onClick={onCreateSession}
           className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition cursor-pointer"
         >
-          New Chat
+          <span>+</span>
+          <span>New Chat</span>
         </button>
       </div>
     </div>
